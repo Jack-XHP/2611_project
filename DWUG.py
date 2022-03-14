@@ -23,7 +23,8 @@ class DWUG(Dataset):
         for file in os.listdir(self.raw_dir):
             # Read data from `raw_path`.
             graph = nx.read_gpickle(f"{self.raw_dir}/{file}")
-            x = torch.tensor([graph.nodes[node]['bert_embedding'][graph.nodes[node]['bert_index']]for node in  list(graph.nodes)], dtype=torch.float)
+            x = torch.tensor([graph.nodes[node]['bert_embedding'][graph.nodes[node]['bert_index']]
+                              for node in  list(graph.nodes)], dtype=torch.float)
             nodeslist = [node for node in  list(graph.nodes)]
             edge_index1 = [nodeslist.index(edge[0]) for edge in graph.edges]
             edge_index2 = [nodeslist.index(edge[1]) for edge in graph.edges]
