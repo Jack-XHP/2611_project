@@ -1,19 +1,21 @@
+import numpy as np
 import torch
+from sklearn.metrics import cluster
 from torch.nn import Linear, Module
 from torch_geometric.nn import DMoNPooling, GCNConv, dense_mincut_pool
 from torch_geometric.utils import to_dense_adj
-from sklearn.metrics import cluster, normalized_mutual_info_score
-import numpy as np
 
 
 class DMON(Module):
     def __init__(self, in_channels, hidden_channels=64, num_nodes=16, dropout=0.5):
         super().__init__()
         self.conv1 = GCNConv(in_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.pool1 = DMoNPooling([hidden_channels, hidden_channels], num_nodes, dropout)
 
     def forward(self, x, edge_index, edge_weight):
         x = self.conv1(x, edge_index, edge_weight).relu()
+        x = self.conv2(x, edge_index, edge_weight).relu()
         adj = to_dense_adj(edge_index)
         cluster, x, adj, spectral_loss, ortho_loss, cluster_loss = self.pool1(x, adj)
         return cluster, spectral_loss + ortho_loss + cluster_loss
@@ -24,14 +26,16 @@ class MinCut(Module):
         super().__init__()
 
         self.conv1 = GCNConv(in_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.pool1 = Linear(hidden_channels, num_nodes)
 
     def forward(self, x, edge_index, edge_weight):
         x = self.conv1(x, edge_index, edge_weight).relu()
+        x = self.conv2(x, edge_index, edge_weight).relu()
         adj = to_dense_adj(edge_index)
         cluster = self.pool1(x)
         x, adj, mincut_loss, ortho_loss = dense_mincut_pool(x, adj, cluster)
-        return [torch.softmax(cluster, dim=-1)],  ortho_loss + mincut_loss
+        return [torch.softmax(cluster, dim=-1)], ortho_loss + mincut_loss
 
 
 def pairwise_recall(y_true, y_pred):

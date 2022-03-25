@@ -1,9 +1,10 @@
-import os.path as osp
 import os
+import os.path as osp
+
 import networkx as nx
-from torch_geometric.data import Dataset, Data, download_url
-import torch
 import numpy as np
+import torch
+from torch_geometric.data import Dataset, Data
 
 
 class DWUG(Dataset):
@@ -16,22 +17,23 @@ class DWUG(Dataset):
 
     @property
     def processed_file_names(self):
-        return [f'data_{i}.pt' for i in range(44)]
+        return [f'data_{i}.pt' for i in range(len(os.listdir(self.raw_dir)))]
 
     def process(self):
         idx = 0
         for file in os.listdir(self.raw_dir):
+            print(file)
             # Read data from `raw_path`.
             graph = nx.read_gpickle(f"{self.raw_dir}/{file}")
             x = torch.tensor([graph.nodes[node]['bert_embedding'][graph.nodes[node]['bert_index']]
-                              for node in  list(graph.nodes)], dtype=torch.float)
-            nodeslist = [node for node in  list(graph.nodes)]
+                              for node in list(graph.nodes)], dtype=torch.float)
+            nodeslist = [node for node in list(graph.nodes)]
             edge_index1 = [nodeslist.index(edge[0]) for edge in graph.edges]
             edge_index2 = [nodeslist.index(edge[1]) for edge in graph.edges]
-            edge_index = torch.tensor([edge_index1 + edge_index2, edge_index2+edge_index1], dtype=torch.long)
+            edge_index = torch.tensor([edge_index1 + edge_index2, edge_index2 + edge_index1], dtype=torch.long)
             edge_weight = np.nan_to_num(np.array([[edge[2]['weight']] for edge in graph.edges.data()]))
             edge_weight = torch.tensor(edge_weight.tolist() + edge_weight.tolist(), dtype=torch.float)
-            y = torch.tensor([graph.nodes[node]['cluster']for node in  list(graph.nodes)], dtype=torch.long)
+            y = torch.tensor([graph.nodes[node]['cluster'] for node in list(graph.nodes)], dtype=torch.long)
             data = Data(x=x, edge_index=edge_index, edge_attr=edge_weight, y=y)
             torch.save(data, osp.join(self.processed_dir, f'data_{idx}.pt'))
             idx += 1

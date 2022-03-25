@@ -1,11 +1,13 @@
-import torch
-import networkx as nx
-from transformers import BertTokenizer, BertModel
 import os
+
+import networkx as nx
+import torch
+from transformers import BertTokenizer, BertModel
+
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 directory = "./dwug_en/graphs/opt"
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertModel.from_pretrained('bert-base-uncased',output_hidden_states = True).to(device)
+model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True).to(device)
 model.eval()
 for file in os.listdir(directory):
     graph = nx.read_gpickle(f"{directory}/{file}")

@@ -1,12 +1,14 @@
-import torch
-from sklearn.metrics import cluster, normalized_mutual_info_score
-from graph_cluster import DMON, MinCut, pairwise_recall, pairwise_accuracy
-from DWUG import DWUG
 import pickle
 
-dataset = DWUG("./dwug_en/graphs/bert")
+import torch
+from sklearn.metrics import normalized_mutual_info_score
+
+from DWUG import DWUG
+from graph_cluster import MinCut, pairwise_recall, pairwise_accuracy, DMON
+
+dataset = DWUG("./dwug_en/graphs/bert_balance")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = MinCut(dataset.num_features).to(device)
+model = DMON(dataset.num_features).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
@@ -30,12 +32,13 @@ def test(data):
     NMI = normalized_mutual_info_score(y, y_pred, average_method='arithmetic')
     acc = pairwise_accuracy(y, y_pred)
     recall = pairwise_recall(y, y_pred)
-    F1 = 2 * acc * recall / (acc+recall)
+    F1 = 2 * acc * recall / (acc + recall)
     return tot_loss.cpu().item(), NMI, F1
 
 
+print("Start training...")
 results = []
-for j in range(44):
+for j in range(len(dataset)):
     word_result = []
     for i in range(1000):
         train_loss = train(dataset[j])
@@ -43,6 +46,5 @@ for j in range(44):
         word_result.append([i, train_loss, test_loss, NMI, F1])
         # print(f"epoch {i}  train_loss {train_loss}  test_loss {test_loss}  test NMI {NMI} test F1 {F1}")
     results.append(word_result)
-print(results)
-with open(r"mincut.pickle", "wb") as output_file:
+with open(r"dmonv2.pickle", "wb") as output_file:
     pickle.dump(results, output_file)
