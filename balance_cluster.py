@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import networkx as nx
-
+ 
 
 directory = "./dwug_en/graphs/bert/raw"
 for file in os.listdir(directory):

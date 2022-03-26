@@ -15,7 +15,7 @@ class DMON(Module):
 
     def forward(self, x, edge_index, edge_weight):
         x = self.conv1(x, edge_index, edge_weight).relu()
-        x = self.conv2(x, edge_index, edge_weight).relu()
+        #x = self.conv2(x, edge_index, edge_weight).relu()
         adj = to_dense_adj(edge_index)
         cluster, x, adj, spectral_loss, ortho_loss, cluster_loss = self.pool1(x, adj)
         return cluster, spectral_loss + ortho_loss + cluster_loss
@@ -31,7 +31,7 @@ class MinCut(Module):
 
     def forward(self, x, edge_index, edge_weight):
         x = self.conv1(x, edge_index, edge_weight).relu()
-        x = self.conv2(x, edge_index, edge_weight).relu()
+        #x = self.conv2(x, edge_index, edge_weight).relu()
         adj = to_dense_adj(edge_index)
         cluster = self.pool1(x)
         x, adj, mincut_loss, ortho_loss = dense_mincut_pool(x, adj, cluster)

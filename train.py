@@ -1,14 +1,27 @@
 import pickle
 
 import torch
-from sklearn.metrics import normalized_mutual_info_score
+from sklearn.metrics import normalized_mutual_info_score, rand_score
 
 from DWUG import DWUG
 from graph_cluster import MinCut, pairwise_recall, pairwise_accuracy, DMON
+import argparse
 
-dataset = DWUG("./dwug_en/graphs/bert_balance")
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = DMON(dataset.num_features).to(device)
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--model', type=str, required=True, default="DMoN")
+parser.add_argument('--layer', type=int, required=True, default=1)
+parser.add_argument("--balance", default=False, action="store_true")
+parser.add_argument('--device', type=int, required=True, default=0)
+args = parser.parse_args()
+if args.balance:
+    dataset = DWUG("./dwug_en/graphs/bert_balance")
+else:
+    dataset = DWUG("./dwug_en/graphs/bert")
+device = torch.device(f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu')
+if args.model == "MinCut":
+    model = MinCut(dataset.num_features).to(device)
+else:
+    model = DMON(dataset.num_features).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
@@ -33,7 +46,8 @@ def test(data):
     acc = pairwise_accuracy(y, y_pred)
     recall = pairwise_recall(y, y_pred)
     F1 = 2 * acc * recall / (acc + recall)
-    return tot_loss.cpu().item(), NMI, F1
+    rand = rand_score(y, y_pred)
+    return tot_loss.cpu().item(), NMI, F1, rand
 
 
 print("Start training...")
@@ -42,9 +56,9 @@ for j in range(len(dataset)):
     word_result = []
     for i in range(1000):
         train_loss = train(dataset[j])
-        test_loss, NMI, F1 = test(dataset[j])
-        word_result.append([i, train_loss, test_loss, NMI, F1])
+        test_loss, NMI, F1, rand = test(dataset[j])
+        word_result.append([i, train_loss, test_loss, NMI, F1, rand])
         # print(f"epoch {i}  train_loss {train_loss}  test_loss {test_loss}  test NMI {NMI} test F1 {F1}")
     results.append(word_result)
-with open(r"dmonv2.pickle", "wb") as output_file:
+with open(rf"{args.model}{args.layer}{int(args.balance)}.pickle", "wb") as output_file:
     pickle.dump(results, output_file)
