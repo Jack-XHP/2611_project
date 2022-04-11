@@ -1,12 +1,24 @@
 import os
 import numpy as np
 import networkx as nx
+from collections import Counter
+from numpy import log
+import matplotlib.pyplot as plt
  
+def balance(seq):
+    n = len(seq)
+    classes = [(clas,float(count)) for clas,count in Counter(seq).items()]
+    k = len(classes)
+    
+    H = -sum([ (count/n) * log((count/n)) for clas,count in classes]) #shannon entropy
+    return H/log(k)
 
+balanceScore = []
 directory = "./dwug_en/graphs/bert/raw"
 for file in os.listdir(directory):
     graph = nx.read_gpickle(f"{directory}/{file}")
     y = np.array([graph.nodes[node]['cluster'] for node in list(graph.nodes)])
+    balanceScore.append(balance(y))
     if y.max() == 0:
         continue   
     count, bin = np.histogram(y, bins=range(y.max()+2))
@@ -33,3 +45,8 @@ for file in os.listdir(directory):
     count, bin = np.histogram(y, bins=range(y.max()+2))
     print(count)
     print(bin)
+
+plt.hist(np.nan_to_num(balanceScore), density=True, bins=10, range=(0,1))  # density=False would make counts
+plt.ylabel('Count')
+plt.xlabel('Balance Factor');     
+plt.savefig("balance.png")

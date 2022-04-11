@@ -19,9 +19,9 @@ else:
     dataset = DWUG("./dwug_en/graphs/bert")
 device = torch.device(f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu')
 if args.model == "MinCut":
-    model = MinCut(dataset.num_features).to(device)
+    model = MinCut(dataset.num_features, layer=args.layer).to(device)
 else:
-    model = DMON(dataset.num_features).to(device)
+    model = DMON(dataset.num_features, layer=args.layer).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
