@@ -106,4 +106,4 @@ def plot_together(index, name, threshold):
     plt.show()
 
 
-#plot_together(3, "NMI", 0.9)
+plot_together(3, "NMI", 0.85)
